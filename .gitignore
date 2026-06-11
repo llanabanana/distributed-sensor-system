@@ -9,7 +9,6 @@ obj/
 
 ## Secrets / env
 appsettings.*.json
-!appsettings.Development.json
 *.pfx
 *.pem
 *.key

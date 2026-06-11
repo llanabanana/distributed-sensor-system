@@ -14,13 +14,13 @@ SensorSimulator  →  Ingress  →  IngestionService  →  PostgreSQL
 
 ## Servisi
 
-| Servis | Port | Opis |
-|--------|------|------|
-| Ingress | 8080 | Jedina ulazna tačka, rutira saobraćaj |
-| IngestionService | 5001 | Prima podatke od senzora |
-| NotificationService | 5003 | Alarmi u realnom vremenu (SignalR) |
-| ConsensusService | — | Worker, računa konsenzus svakih 60s |
-| SensorSimulator | — | Klijent, simulira senzore |
+| Servis              | Port | Opis                                  |
+| ------------------- | ---- | ------------------------------------- |
+| Ingress             | 8080 | Jedina ulazna tačka, rutira saobraćaj |
+| IngestionService    | 5001 | Prima podatke od senzora              |
+| NotificationService | 5003 | Alarmi u realnom vremenu (SignalR)    |
+| ConsensusService    | —    | Worker, računa konsenzus svakih 60s   |
+| SensorSimulator     | —    | Klijent, simulira senzore             |
 
 ## Pokretanje (docker-compose)
 
@@ -34,7 +34,3 @@ docker-compose up --build
 minikube start
 kubectl apply -f k8s/
 ```
-
-## Bezbednost
-
-Dokumentacija bezbednosnih mera: [docs/security.md](docs/security.md)

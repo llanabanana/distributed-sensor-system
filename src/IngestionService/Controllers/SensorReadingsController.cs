@@ -10,6 +10,8 @@ namespace IngestionService.Controllers;
 [Route("api/readings")]
 public class SensorReadingsController(AppDbContext db, AlarmDetectionService alarmService) : ControllerBase
 {
+    private const int RequiredActiveSensors = 5;
+
     [HttpPost]
     public async Task<IActionResult> Ingest([FromBody] SensorReadingDto dto)
     {
@@ -28,13 +30,18 @@ public class SensorReadingsController(AppDbContext db, AlarmDetectionService ala
 
         var status = await db.SensorStatuses.FindAsync(dto.SensorId);
         if (status is null)
+        {
+            var activeCount = db.SensorStatuses.Count(s => s.IsActive && !s.IsBlocked);
+            var shouldBeActive = activeCount < RequiredActiveSensors;
             db.SensorStatuses.Add(new SensorStatus
             {
                 SensorId = dto.SensorId,
-                IsActive = true,
+                IsActive = shouldBeActive,
+                IsReserve = !shouldBeActive,
                 IsBlocked = false,
                 LastSeen = DateTime.UtcNow
             });
+        }
         else
         {
             status.LastSeen = DateTime.UtcNow;

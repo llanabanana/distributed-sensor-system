@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<SensorReading> SensorReadings => Set<SensorReading>();
     public DbSet<AlarmEvent> AlarmEvents => Set<AlarmEvent>();
     public DbSet<SensorStatus> SensorStatuses => Set<SensorStatus>();
+    public DbSet<SensorConfig> SensorConfigs => Set<SensorConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +30,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         modelBuilder.Entity<SensorStatus>(e =>
+        {
+            e.HasKey(x => x.SensorId);
+            e.Property(x => x.SensorId).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<SensorConfig>(e =>
         {
             e.HasKey(x => x.SensorId);
             e.Property(x => x.SensorId).HasMaxLength(50);

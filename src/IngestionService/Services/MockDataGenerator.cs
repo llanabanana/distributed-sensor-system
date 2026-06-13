@@ -5,7 +5,8 @@ using Shared.Models;
 
 namespace IngestionService.Services;
 
-public class MockDataGenerator(IServiceScopeFactory scopeFactory, ILogger<MockDataGenerator> logger)
+// Class used for testing until SensorSimulator is implemented
+public class MockDataGenerator
     : BackgroundService
 {
     private readonly Random _random = new();
@@ -13,11 +14,21 @@ public class MockDataGenerator(IServiceScopeFactory scopeFactory, ILogger<MockDa
     private readonly double[] _minTemps = { 20, 21, 19, 22, 100 };
     private readonly double[] _maxTemps = { 25, 26, 24, 27, 150 };
     private bool _configsSeeded = false;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<MockDataGenerator> _logger;
+
+    public MockDataGenerator(IServiceScopeFactory scopeFactory, IHttpClientFactory httpClientFactory, ILogger<MockDataGenerator> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Seeding konfiguracija (jednom)
-        await SeedSensorConfigsAsync();
+        // Init sensorConfigs (once)
+        //await SeedSensorConfigsAsync();
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -26,11 +37,12 @@ public class MockDataGenerator(IServiceScopeFactory scopeFactory, ILogger<MockDa
         }
     }
 
+    // initialize mock sensorConfigs in the database
     private async Task SeedSensorConfigsAsync()
     {
         if (_configsSeeded) return;
 
-        using var scope = scopeFactory.CreateScope();
+        using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         foreach (var sensorId in _sensorIds)
@@ -49,7 +61,6 @@ public class MockDataGenerator(IServiceScopeFactory scopeFactory, ILogger<MockDa
                     AlarmHighThreshold = 40     // priority 3
                 };
                 await db.SensorConfigs.AddAsync(config);
-                logger.LogInformation("Seeded SensorConfig for {SensorId} (Quality = Good)", sensorId);
             }
         }
 
@@ -58,28 +69,31 @@ public class MockDataGenerator(IServiceScopeFactory scopeFactory, ILogger<MockDa
     }
 
     private async Task GenerateMockData()
+{
+    var client = _httpClientFactory.CreateClient();
+    for (int i = 0; i < _sensorIds.Length; i++)
     {
-        using var scope = scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        for (int i = 0; i < _sensorIds.Length; i++)
+        // generating five random sensor readings 
+        var sensorId = _sensorIds[i];
+        double temp = _minTemps[i] + _random.NextDouble() * (_maxTemps[i] - _minTemps[i]);
+        SensorReading readingDto = new SensorReading
         {
-            var sensorId = _sensorIds[i];
-            double temp = _minTemps[i] + _random.NextDouble() * (_maxTemps[i] - _minTemps[i]);
-            var reading = new SensorReading
-            {
-                SensorId = sensorId,
-                Temperature = temp,
-                Timestamp = DateTime.UtcNow,
-                AlarmPriority = AlarmPriority.None,
-                Quality = DataQuality.Good,
-                IsConsensus = false
-            };
-            await db.SensorReadings.AddAsync(reading);
+            SensorId = sensorId,
+            Temperature = temp,
+            Timestamp = DateTime.UtcNow,
+            Quality = DataQuality.Good,
+            AlarmPriority = AlarmPriority.None
+        };
+        
+        // sending readings to the sensor reading controller
+        var response = await client.PostAsJsonAsync("http://localhost:5147/api/readings", readingDto);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Failed to send reading for {SensorId}: {StatusCode}", sensorId, response.StatusCode);
         }
-
-        await db.SaveChangesAsync();
-        logger.LogInformation("Added 5 mock measurements at {time} (sensor5 malicious: {temp5:F2}°C)",
-            DateTime.UtcNow, _minTemps[4] + _random.NextDouble() * (_maxTemps[4] - _minTemps[4]));
     }
+   
+    _logger.LogInformation("Sent 5 mock readings at {time} (sensor5 malicious: {temp5:F2}°C)",
+        DateTime.UtcNow, _minTemps[4] + _random.NextDouble() * (_maxTemps[4] - _minTemps[4]));
+}
 }

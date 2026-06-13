@@ -5,11 +5,19 @@ using Shared.Models;
 
 namespace IngestionService.Services;
 
-public class AlarmDetectionService(AppDbContext db)
+public class AlarmDetectionService
 {
+    private readonly AppDbContext _db;
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public AlarmDetectionService(AppDbContext db, IHttpClientFactory httpClientFactory)
+    {
+        _db = db;
+        _httpClientFactory = httpClientFactory;
+    }
     public async Task<AlarmPriority> CheckAndRecordAlarm(string sensorId, double temperature)
     {
-        var config = await db.SensorConfigs.FindAsync(sensorId);
+        var config = await _db.SensorConfigs.FindAsync(sensorId);
         if (config is null)
             return AlarmPriority.None;
 
@@ -17,16 +25,20 @@ public class AlarmDetectionService(AppDbContext db)
 
         if (priority != AlarmPriority.None)
         {
-            db.AlarmEvents.Add(new AlarmEvent
+            _db.AlarmEvents.Add(new AlarmEvent
             {
                 SensorId = sensorId,
                 Temperature = temperature,
                 Priority = priority,
                 Timestamp = DateTime.UtcNow
             });
+            await _db.SaveChangesAsync();
 
             PrintAlarm(sensorId, temperature, priority);
+            _ = Task.Run(async () => await SendAlarmToNotificationService(sensorId, temperature, priority));
         }
+
+        
 
         return priority;
     }
@@ -51,4 +63,31 @@ public class AlarmDetectionService(AppDbContext db)
 
         Console.WriteLine($"{color}[ALARM P{(int)priority}] Sensor {sensorId}: {temperature:F2}°C\x1b[0m");
     }
+
+    private async Task SendAlarmToNotificationService(string sensorId, double temperature, AlarmPriority priority)
+{
+    try
+    {
+        var client = _httpClientFactory.CreateClient();
+        var alarmDto = new
+        {
+            SensorId = sensorId,
+            Temperature = temperature,
+            Priority = (int)priority,
+            Timestamp = DateTime.UtcNow
+        };
+
+        var notificationUrl = "https://localhost:7210/api/alarm/notify";  // prilagodi port!
+        var response = await client.PostAsJsonAsync(notificationUrl, alarmDto);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Failed to notify: {response.StatusCode}");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error sending alarm to NotificationService: {ex.Message}");
+    }
+}
 }

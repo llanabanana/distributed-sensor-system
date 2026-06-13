@@ -10,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddScoped<AlarmDetectionService>();
 builder.Services.AddHostedService<SensorWatchdogService>();
+builder.Services.AddHostedService<MockDataGenerator>(); // Privremeno dok se testira
 
 var app = builder.Build();
 

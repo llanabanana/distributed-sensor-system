@@ -11,23 +11,25 @@ builder.Services.AddControllers();
 // 3. CORS politika – dozvoli pristup sa bilo koje adrese (samo za razvoj)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy
+            .WithOrigins("http://localhost:8080")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
+
+
 
 var app = builder.Build();
 
 // 4. Omogući CORS (mora biti prije MapHub i MapControllers)
-app.UseCors("AllowAll");
-
-// 5. Mapiranje SignalR Huba na putanju /alarmHub
+app.UseCors("AllowFrontend");
+app.UseRouting();
+app.UseWebSockets();   // DODAJ OVO
 app.MapHub<AlarmHub>("/alarmHub");
-
-// 6. Mapiranje kontrolera (za /api/alarm/notify)
 app.MapControllers();
 
 // 7. Pokretanje aplikacije

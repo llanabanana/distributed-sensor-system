@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm Monitor - Nuclear Powerplant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard</h1>
+        <div class="status">
+            <span id="connectionStatus" class="disconnected">Connecting...</span>
+            <button id="reconnectBtn" style="display: none;">Try again</button>
+        </div>
+        <div class="alarm-list">
+            <h2>Alarms</h2>
+            <ul id="alarmList">
+                <li class="placeholder">Waiting for alarms...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

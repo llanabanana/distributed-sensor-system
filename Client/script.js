@@ -4,21 +4,19 @@ const HUB_ENDPOINT = "/alarmHub";
 
 let connection = null;
 
-// Elementi DOM-a
+// DOM elements
 const statusSpan = document.getElementById("connectionStatus");
 const reconnectBtn = document.getElementById("reconnectBtn");
 const alarmList = document.getElementById("alarmList");
 
-// Pomoćna funkcija za prikazivanje datuma u lokalnom vremenu
 function formatTime(isoString) {
     if (!isoString) return new Date().toLocaleTimeString();
     const date = new Date(isoString);
     return date.toLocaleTimeString() + ":" + date.getMilliseconds().toString().padStart(3, '0');
 }
 
-// Dodavanje alarma u listu
+// Adding to list
 function addAlarmToList(alarm) {
-    // Ukloni placeholder ako postoji
     if (alarmList.children.length === 1 && alarmList.children[0].classList.contains("placeholder")) {
         alarmList.innerHTML = "";
     }
@@ -28,7 +26,7 @@ function addAlarmToList(alarm) {
 
     const sensorSpan = document.createElement("span");
     sensorSpan.className = "sensor";
-    sensorSpan.textContent = `📡 ${alarm.sensorId}`;
+    sensorSpan.textContent = `${alarm.sensorId}`;
 
     const tempSpan = document.createElement("span");
     tempSpan.className = "temp";
@@ -36,7 +34,7 @@ function addAlarmToList(alarm) {
 
     const prioritySpan = document.createElement("span");
     prioritySpan.className = "priority";
-    prioritySpan.textContent = `PRIORITET ${alarm.priority}`;
+    prioritySpan.textContent = `PRIORITY ${alarm.priority}`;
 
     const timeSpan = document.createElement("span");
     timeSpan.className = "time";
@@ -47,16 +45,13 @@ function addAlarmToList(alarm) {
     li.appendChild(prioritySpan);
     li.appendChild(timeSpan);
 
-    // Dodaj na početak liste (najnoviji gore)
     alarmList.prepend(li);
 
-    // Opcionalno: zvučni signal ako je prioritet 3
     if (alarm.priority >= 2) {
         playBeep(alarm.priority);
     }
 }
 
-// Zvučni signal (jednostavan "pip" preko Web Audio API)
 function playBeep(priority) {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -69,15 +64,13 @@ function playBeep(priority) {
         oscillator.start();
         gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.6);
         oscillator.stop(audioCtx.currentTime + 0.6);
-        // zatvori audio context nakon kraja
         setTimeout(() => audioCtx.close(), 700);
     } catch(e) {
-        // ako browser blokira audio, ignoriši
-        console.warn("Audio nije dozvoljen ili nije podržan");
+        console.warn("Audio not allower or not supported");
     }
 }
 
-// Ažuriranje statusa konekcije
+// Update connection status
 function updateStatus(connected, message = "") {
     if (connected) {
         statusSpan.textContent = "Connected to SignalR";
@@ -90,7 +83,7 @@ function updateStatus(connected, message = "") {
     }
 }
 
-// Glavna funkcija za uspostavljanje konekcije
+// Establishing connection
 async function startConnection() {
     if (connection) {
         try { await connection.stop(); } catch(e) { }
@@ -107,13 +100,11 @@ async function startConnection() {
         .configureLogging(signalR.LogLevel.Information)
         .build();
 
-    // Registracija handlera za ReceiveAlarm
     connection.on("ReceiveAlarm", (alarm) => {
         console.log("Alarm received:", alarm);
         addAlarmToList(alarm);
     });
 
-    // Handlers za konekciju
     connection.onclose((error) => {
         console.error("Connection closed:", error);
         updateStatus(false, "Connection closed");
@@ -139,19 +130,16 @@ async function startConnection() {
     }
 }
 
-// Dugme za ručno ponovno povezivanje
 reconnectBtn.addEventListener("click", () => {
     startConnection();
 });
 
-// Pokretanje konekcije pri učitavanju stranice
 startConnection();
 
-// Opciono: osvježi listu svakih 30 sekundi (čisto vizuelno)
 setInterval(() => {
     if (alarmList.children.length === 0) {
         if (alarmList.innerHTML === "" || !document.querySelector(".placeholder")) {
-            alarmList.innerHTML = '<li class="placeholder">Čekam alarme...</li>';
+            alarmList.innerHTML = '<li class="placeholder">Waiting for alarms...</li>';
         }
     }
 }, 10000);

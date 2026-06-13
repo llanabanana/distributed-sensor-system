@@ -1,34 +1,34 @@
+using NotificationService.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Dodavanje SignalR servisa
+builder.Services.AddSignalR();
+
+// 2. Dodavanje kontrolera (za API endpoint)
+builder.Services.AddControllers();
+
+// 3. CORS politika – dozvoli pristup sa bilo koje adrese (samo za razvoj)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 4. Omogući CORS (mora biti prije MapHub i MapControllers)
+app.UseCors("AllowAll");
 
-app.UseHttpsRedirection();
+// 5. Mapiranje SignalR Huba na putanju /alarmHub
+app.MapHub<AlarmHub>("/alarmHub");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// 6. Mapiranje kontrolera (za /api/alarm/notify)
+app.MapControllers();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-});
-
+// 7. Pokretanje aplikacije
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

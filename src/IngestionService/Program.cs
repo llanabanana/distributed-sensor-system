@@ -9,6 +9,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<AlarmDetectionService>();
+builder.Services.AddHostedService<SensorWatchdogService>();
 
 var app = builder.Build();
 

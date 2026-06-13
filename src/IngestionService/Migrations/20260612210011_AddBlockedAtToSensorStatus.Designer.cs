@@ -3,6 +3,7 @@ using System;
 using IngestionService.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IngestionService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260612210011_AddBlockedAtToSensorStatus")]
+    partial class AddBlockedAtToSensorStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,30 +52,6 @@ namespace IngestionService.Migrations
                     b.HasIndex("Timestamp");
 
                     b.ToTable("AlarmEvents");
-                });
-
-            modelBuilder.Entity("Shared.Models.ConsensusValue", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsConsensus")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("Value")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Timestamp");
-
-                    b.ToTable("ConsensusValues");
                 });
 
             modelBuilder.Entity("Shared.Models.SensorConfig", b =>
@@ -154,9 +133,6 @@ namespace IngestionService.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsBlocked")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsReserve")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastSeen")

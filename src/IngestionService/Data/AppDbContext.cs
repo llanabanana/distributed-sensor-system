@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AlarmEvent> AlarmEvents => Set<AlarmEvent>();
     public DbSet<SensorStatus> SensorStatuses => Set<SensorStatus>();
     public DbSet<SensorConfig> SensorConfigs => Set<SensorConfig>();
+    public DbSet<ConsensusValue> ConsensusValues => Set<ConsensusValue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(x => x.SensorId);
             e.Property(x => x.SensorId).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<ConsensusValue>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Timestamp).IsRequired();
+            e.Property(x => x.Value).IsRequired();
+            e.Property(x => x.IsConsensus).IsRequired();
+            e.HasIndex(x => x.Timestamp); 
         });
     }
 }
